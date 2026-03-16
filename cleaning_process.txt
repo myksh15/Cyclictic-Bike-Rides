@@ -1,0 +1,17 @@
+let
+    Source = Folder.Files("C:\Users\91842\Downloads\Data Analysis\Google Data Analytics\Google - Case Study 1\Data"),
+    #"Filtered Hidden Files1" = Table.SelectRows(Source, each [Attributes]?[Hidden]? <> true),
+    #"Invoke Custom Function1" = Table.AddColumn(#"Filtered Hidden Files1", "Transform File", each #"Transform File"([Content])),
+    #"Renamed Columns1" = Table.RenameColumns(#"Invoke Custom Function1", {"Name", "Source.Name"}),
+    #"Expanded Table Column1" = Table.ExpandTableColumn(#"Renamed Columns1", "Transform File", Table.ColumnNames(#"Transform File"(#"Sample File"))),
+    #"Changed Type" = Table.TransformColumnTypes(#"Expanded Table Column1",{{"Source.Name", type text}, {"ride_id", type text}, {"rideable_type", type text}, {"started_at", type datetime}, {"ended_at", type datetime}, {"start_station_name", type text}, {"start_station_id", type text}, {"end_station_name", type text}, {"end_station_id", type text}, {"start_lat", type number}, {"start_lng", type number}, {"end_lat", type number}, {"end_lng", type number}, {"member_casual", type text}}),
+    #"Inserted Day Name" = Table.AddColumn(#"Changed Type", "Day Name", each Date.DayOfWeekName([started_at]), type text),
+    #"Inserted Hour" = Table.AddColumn(#"Inserted Day Name", "Hour", each Time.Hour([started_at]), Int64.Type),
+    #"Inserted Month Name" = Table.AddColumn(#"Inserted Hour", "Month Name", each Date.MonthName([started_at]), type text),
+    #"Added Custom" = Table.AddColumn(#"Inserted Month Name", "ride_time", each ([ended_at]-[started_at])*24*60),
+    #"Added Conditional Column" = Table.AddColumn(#"Added Custom", "Custom", each if [ride_time] <= #duration(10, 0, 0, 0) then "Under 10" else if [ride_time] <= #duration(30, 0, 0, 0) then "Under 30" else if [ride_time] <= #duration(60, 0, 0, 0) then "Under 60" else "Over 60"),
+    #"Renamed Columns2" = Table.RenameColumns(#"Added Conditional Column",{{"Custom", "ride_time_categories"}}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Renamed Columns2",{{"ride_time", type number}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Changed Type1",{"Content", "Source.Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path", "started_at", "ended_at", "start_station_name", "start_station_id", "end_station_name", "end_station_id", "start_lat", "start_lng", "end_lat", "end_lng"})
+in
+    #"Removed Columns"
